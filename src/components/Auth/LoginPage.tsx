@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   ShieldCheck,
   Lock,
@@ -6,13 +6,10 @@ import {
   Eye,
   EyeOff,
   AlertCircle,
-  KeyRound,
   ShieldAlert,
   CheckCircle2,
   Store,
-  ArrowRight,
   RotateCcw,
-  Sparkles,
   Send,
 } from 'lucide-react';
 import { api, setAuthToken, setStoredUser } from '../../api/client';
@@ -46,8 +43,8 @@ interface LoginPageProps {
 
 export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
   const [step, setStep] = useState<'credentials' | 'verification'>('credentials');
-  const [email, setEmail] = useState('Kgomotso.Lekganyane@spar.co.za');
-  const [password, setPassword] = useState('SPAR@Kgomotso2026!');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [verificationCode, setVerificationCode] = useState('');
   const [simulatedCode, setSimulatedCode] = useState<string | null>(null);
   const [verificationId, setVerificationId] = useState<string | null>(null);
@@ -55,22 +52,6 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [successNotice, setSuccessNotice] = useState<string | null>(null);
-  const [demoAccounts, setDemoAccounts] = useState<AuthAccount[]>(AUTHORIZED_ACCOUNTS);
-
-  useEffect(() => {
-    loadAccounts();
-  }, []);
-
-  const loadAccounts = async () => {
-    try {
-      const data = await api.getAccounts();
-      if (data && data.length > 0) {
-        setDemoAccounts(data);
-      }
-    } catch {
-      // use default authorized accounts
-    }
-  };
 
   // Step 1: Validate Email + Password & Dispatch 2FA Code
   const handleCredentialsSubmit = async (e?: React.FormEvent) => {
@@ -79,7 +60,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
     const cleanPass = password.trim();
 
     if (!cleanEmail || !cleanPass) {
-      setErrorMsg('Please enter both your authorized email and password.');
+      setErrorMsg('Please enter both your email and password.');
       return;
     }
 
@@ -90,7 +71,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
 
     if (!isWhitelisted) {
       setErrorMsg(
-        'Access Denied: Unrecognized email address. Access to this IP-protected system is restricted strictly to Kgomotso.Lekganyane@spar.co.za and tsholanangpodile@gmail.com.'
+        'Access Denied: Unrecognized email address. Access to this IP-protected system is restricted strictly to authorized project accounts.'
       );
       return;
     }
@@ -108,7 +89,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
           setSimulatedCode(res.simulated_code);
           setStep('verification');
           setSuccessNotice(
-            `A 6-digit approval code was dispatched to ${cleanEmail}.`
+            `A 6-digit approval code was dispatched to ${email.trim()}.`
           );
           return;
         }
@@ -125,7 +106,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
           setSimulatedCode(mockCode);
           setVerificationId(`vcode_${Date.now()}`);
           setStep('verification');
-          setSuccessNotice(`A 6-digit approval code was dispatched to ${cleanEmail}.`);
+          setSuccessNotice(`A 6-digit approval code was dispatched to ${email.trim()}.`);
           return;
         }
 
@@ -220,14 +201,6 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
     }
   };
 
-  const handleQuickSelect = (acc: AuthAccount) => {
-    setEmail(acc.email);
-    setPassword(acc.default_password || 'SPAR@Kgomotso2026!');
-    setStep('credentials');
-    setErrorMsg(null);
-    setSuccessNotice(null);
-  };
-
   return (
     <div className="min-h-screen bg-zinc-100 flex flex-col justify-between items-center p-4 sm:p-6 select-none">
       {/* Top Banner */}
@@ -255,12 +228,12 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
 
           <h2 className="text-xl font-black text-zinc-900 tracking-tight">
             {step === 'credentials'
-              ? 'Authorized Personnel Sign-In'
+              ? 'Workforce Portal Sign-In'
               : 'Security Verification Approval'}
           </h2>
           <p className="text-xs text-zinc-500 mt-1">
             {step === 'credentials'
-              ? 'Enter your whitelisted credentials to access the IP protected system.'
+              ? 'Enter your registered credentials to access the IP protected system.'
               : `Enter the 6-digit verification code sent to ${email}`}
           </p>
         </div>
@@ -281,7 +254,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
           </div>
         )}
 
-        {/* STEP 1: CREDENTIALS FORM */}
+        {/* STEP 1: MANUAL CREDENTIALS ENTRY */}
         {step === 'credentials' ? (
           <form onSubmit={handleCredentialsSubmit} className="mt-5 space-y-4">
             <div>
@@ -293,7 +266,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
                 <input
                   type="email"
                   required
-                  placeholder="Kgomotso.Lekganyane@spar.co.za"
+                  placeholder="name@spar.co.za"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   className="w-full pl-9 pr-3 py-2.5 text-xs bg-zinc-50 border border-zinc-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-black focus:bg-white font-medium"
@@ -341,7 +314,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
             </button>
           </form>
         ) : (
-          /* STEP 2: 6-DIGIT EMAIL VERIFICATION CODE FORM */
+          /* STEP 2: 6-DIGIT EMAIL VERIFICATION CODE ENTRY */
           <form onSubmit={handleVerifyCodeSubmit} className="mt-5 space-y-4">
             {/* Simulated Email Dispatch Box */}
             {simulatedCode && (
@@ -425,60 +398,15 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
           </form>
         )}
 
-        {/* Authorized Accounts 1-Click Selector */}
-        <div className="mt-6 pt-5 border-t border-zinc-100">
-          <div className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider mb-2 text-center flex items-center justify-center gap-1.5">
-            <KeyRound className="w-3 h-3 text-zinc-500" />
-            <span>Authorized IP Owners (Click to Fill):</span>
-          </div>
-
-          <div className="space-y-1.5">
-            {demoAccounts.map((acc) => (
-              <button
-                key={acc.id}
-                type="button"
-                onClick={() => handleQuickSelect(acc)}
-                className={`w-full p-2.5 rounded-xl text-left transition-all border cursor-pointer ${
-                  email.toLowerCase() === acc.email.toLowerCase()
-                    ? 'bg-black text-white border-black shadow-xs'
-                    : 'bg-zinc-50 hover:bg-zinc-100 border-zinc-200 text-zinc-800'
-                }`}
-              >
-                <div className="flex items-center justify-between">
-                  <div className="text-xs font-bold truncate">{acc.full_name}</div>
-                  <span
-                    className={`text-[9px] font-mono font-bold px-1.5 py-0.5 rounded ${
-                      email.toLowerCase() === acc.email.toLowerCase()
-                        ? 'bg-zinc-800 text-zinc-200'
-                        : 'bg-zinc-200 text-zinc-800'
-                    }`}
-                  >
-                    WHITELISTED
-                  </span>
-                </div>
-                <div
-                  className={`text-[10px] font-mono truncate mt-0.5 ${
-                    email.toLowerCase() === acc.email.toLowerCase()
-                      ? 'text-zinc-300'
-                      : 'text-zinc-500'
-                  }`}
-                >
-                  {acc.email}
-                </div>
-              </button>
-            ))}
-          </div>
-        </div>
-
         {/* IP Protection Notice */}
-        <div className="mt-5 p-3.5 bg-zinc-50 border border-zinc-200 rounded-xl space-y-1">
+        <div className="mt-6 p-3.5 bg-zinc-50 border border-zinc-200 rounded-xl space-y-1">
           <div className="flex items-center gap-1.5 text-[10px] font-bold text-zinc-800 uppercase tracking-tight">
             <ShieldAlert className="w-3.5 h-3.5 text-black" />
             <span>Confidential & Proprietary IP Protected</span>
           </div>
           <p className="text-[10px] text-zinc-500 leading-relaxed">
-            Access to this system is restricted exclusively to authorized IP holders: <strong>Kgomotso.Lekganyane@spar.co.za</strong> and <strong>tsholanangpodile@gmail.com</strong>.
-            Any unauthorized attempt to access, duplicate, or copy this application and its underlying algorithms will be rejected and logged.
+            Access is restricted strictly to authorized project accounts.
+            Unauthorized attempts to access, duplicate, or inspect this application will be rejected and logged.
           </p>
         </div>
       </div>
