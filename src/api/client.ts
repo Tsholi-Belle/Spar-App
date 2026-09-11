@@ -64,6 +64,11 @@ async function fetchJSON<T>(url: string, options?: RequestInit): Promise<T> {
     let errorMsg = `HTTP Error ${res.status}`;
     try {
       const errorData = await res.json();
+      if (errorData.code === 'SESSION_CONCURRENCY_TERMINATED' || errorData.error?.includes('Single-Admin Security Lock')) {
+        setAuthToken(null);
+        setStoredUser(null);
+        window.dispatchEvent(new CustomEvent('spar_session_terminated', { detail: { message: errorData.error } }));
+      }
       if (errorData.error) errorMsg = errorData.error;
     } catch {
       // ignore
@@ -99,6 +104,16 @@ export const api = {
     return res;
   },
 
+  sendHeartbeat: async (): Promise<{ success: boolean; active_user?: string }> => {
+    return fetchJSON('/auth/heartbeat', {
+      method: 'POST',
+    });
+  },
+
+  getActiveStatus: async (): Promise<{ success: boolean; active: boolean; email?: string; full_name?: string }> => {
+    return fetchJSON('/auth/active-status');
+  },
+
   resendCode: async (email: string): Promise<{ simulated_code: string; message: string }> => {
     return fetchJSON('/auth/resend-code', {
       method: 'POST',
@@ -115,7 +130,12 @@ export const api = {
     return res.data;
   },
 
-  logout: () => {
+  logout: async () => {
+    try {
+      await fetchJSON('/auth/logout', { method: 'POST' });
+    } catch {
+      // ignore
+    }
     setAuthToken(null);
     setStoredUser(null);
   },

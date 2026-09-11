@@ -10,6 +10,48 @@ const AUTHORIZED_EMAILS = [
   'tsholanangpodile@gmail.com',
 ];
 
+// Helper to check if a token is the single active admin session
+export function validateActiveAdminToken(token: string | null | undefined): { valid: boolean; user?: any; reason?: string } {
+  if (!token) return { valid: false, reason: 'No token provided' };
+
+  const session = db.prepare('SELECT * FROM active_sessions WHERE id = ?').get('active_admin_session') as any;
+  if (!session) {
+    // If no active session recorded, allow if valid token structure (initialization)
+    return { valid: true };
+  }
+
+  if (session.token !== token) {
+    return {
+      valid: false,
+      reason: 'SESSION_CONCURRENCY_TERMINATED',
+    };
+  }
+
+  return { valid: true, user: session };
+}
+
+// GET active admin status (to check if someone is currently logged in)
+router.get('/active-status', (req, res) => {
+  try {
+    const session = db.prepare('SELECT user_id, email, full_name, created_at, last_heartbeat FROM active_sessions WHERE id = ?').get('active_admin_session') as any;
+
+    if (!session) {
+      return res.json({ success: true, active: false });
+    }
+
+    res.json({
+      success: true,
+      active: true,
+      email: session.email,
+      full_name: session.full_name,
+      created_at: session.created_at,
+      last_heartbeat: session.last_heartbeat,
+    });
+  } catch (error: any) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
 // POST Step 1: Initial Email & Password Validation + Generate 6-Digit Email Verification Code
 router.post('/login', (req, res) => {
   try {
@@ -41,6 +83,9 @@ router.post('/login', (req, res) => {
         error: 'Invalid password. Please check your secure access passkey.',
       });
     }
+
+    // Check if another admin session is currently active to inform the user
+    const existingSession = db.prepare('SELECT email, full_name FROM active_sessions WHERE id = ?').get('active_admin_session') as any;
 
     // Generate 6-digit verification code for two-factor email security approval
     const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
@@ -75,6 +120,9 @@ router.post('/login', (req, res) => {
       email: user.email,
       full_name: user.full_name,
       simulated_code: verificationCode,
+      active_session_notice: existingSession
+        ? `Notice: Signing in will terminate the existing session held by ${existingSession.full_name} (${existingSession.email}). Simultaneous admin access is prohibited.`
+        : undefined,
       message: `A single-use 6-digit approval code has been dispatched to ${user.email}.`,
     });
   } catch (error: any) {
@@ -82,7 +130,7 @@ router.post('/login', (req, res) => {
   }
 });
 
-// POST Step 2: Verify 6-Digit Email Code and Issue Authenticated Token
+// POST Step 2: Verify 6-Digit Email Code, Enforce Single Active Admin Session Lock, and Issue Token
 router.post('/verify-code', (req, res) => {
   try {
     const { email, code, verification_id } = req.body;
@@ -140,15 +188,31 @@ router.post('/verify-code', (req, res) => {
     // Generate authenticated session token
     const sessionToken = `spar_token_${user.id}_${Date.now()}_${randomUUID().slice(0, 8)}`;
 
-    // Log successful login audit
+    // SINGLE ADMIN CONCURRENCY ENFORCEMENT:
+    // Revoke any previous active admin session so only THIS new session is valid
+    db.exec('DELETE FROM active_sessions;');
+
+    db.prepare(`
+      INSERT INTO active_sessions (id, user_id, email, full_name, token, ip_address, created_at, last_heartbeat)
+      VALUES (?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))
+    `).run(
+      'active_admin_session',
+      user.id,
+      user.email,
+      user.full_name,
+      sessionToken,
+      req.ip || req.socket.remoteAddress || '127.0.0.1'
+    );
+
+    // Log single-admin concurrency audit event
     try {
       db.prepare(`
         INSERT INTO audit_logs (id, action, entity_type, entity_id, details, user_role)
-        VALUES (?, 'USER_SIGN_IN_2FA_VERIFIED', 'auth', ?, ?, ?)
+        VALUES (?, 'SINGLE_ADMIN_SESSION_ACQUIRED', 'auth', ?, ?, ?)
       `).run(
         randomUUID(),
         user.id,
-        `2FA verified sign-in by ${user.full_name} (${user.email})`,
+        `Single-Admin session locked for ${user.full_name} (${user.email}). All other sessions revoked.`,
         user.role
       );
     } catch {
@@ -167,6 +231,65 @@ router.post('/verify-code', (req, res) => {
         avatar_initials: user.avatar_initials,
       },
     });
+  } catch (error: any) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// POST Heartbeat / Active Session Ping
+router.post('/heartbeat', (req, res) => {
+  try {
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return res.status(401).json({ success: false, error: 'Not authenticated' });
+    }
+
+    const token = authHeader.split(' ')[1];
+    const session = db.prepare('SELECT * FROM active_sessions WHERE id = ?').get('active_admin_session') as any;
+
+    if (!session || session.token !== token) {
+      return res.status(401).json({
+        success: false,
+        code: 'SESSION_CONCURRENCY_TERMINATED',
+        error: 'Single-Admin Security Lock: Another administrator has signed in. Simultaneous admin access is prohibited.',
+      });
+    }
+
+    // Update heartbeat timestamp
+    db.prepare("UPDATE active_sessions SET last_heartbeat = datetime('now') WHERE id = ?").run('active_admin_session');
+
+    res.json({ success: true, active_user: session.email });
+  } catch (error: any) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// POST Logout
+router.post('/logout', (req, res) => {
+  try {
+    const authHeader = req.headers.authorization;
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      const token = authHeader.split(' ')[1];
+      const session = db.prepare('SELECT * FROM active_sessions WHERE id = ?').get('active_admin_session') as any;
+      if (session && session.token === token) {
+        db.exec('DELETE FROM active_sessions;');
+        try {
+          db.prepare(`
+            INSERT INTO audit_logs (id, action, entity_type, entity_id, details, user_role)
+            VALUES (?, 'USER_SIGN_OUT', 'auth', ?, ?, ?)
+          `).run(
+            randomUUID(),
+            session.user_id,
+            `Admin ${session.full_name} (${session.email}) signed out and released single-admin lock.`,
+            'admin'
+          );
+        } catch {
+          // ignore
+        }
+      }
+    }
+
+    res.json({ success: true, message: 'Logged out successfully' });
   } catch (error: any) {
     res.status(500).json({ success: false, error: error.message });
   }
@@ -205,22 +328,7 @@ router.post('/resend-code', (req, res) => {
   }
 });
 
-// GET authorized accounts list (Only the 2 authorized emails)
-router.get('/accounts', (req, res) => {
-  try {
-    const accounts = db.prepare(`
-      SELECT id, email, full_name, role, department, avatar_initials, password_hash as default_password
-      FROM users
-      ORDER BY full_name ASC
-    `).all();
-
-    res.json({ success: true, data: accounts });
-  } catch (error: any) {
-    res.status(500).json({ success: false, error: error.message });
-  }
-});
-
-// GET /me to validate current session
+// GET /me to validate current session against single-active-admin lock
 router.get('/me', (req, res) => {
   try {
     const authHeader = req.headers.authorization;
@@ -229,6 +337,16 @@ router.get('/me', (req, res) => {
     }
 
     const token = authHeader.split(' ')[1];
+    const session = db.prepare('SELECT * FROM active_sessions WHERE id = ?').get('active_admin_session') as any;
+
+    if (session && session.token !== token) {
+      return res.status(401).json({
+        success: false,
+        code: 'SESSION_CONCURRENCY_TERMINATED',
+        error: 'Single-Admin Security Lock: Another administrator has signed in. Simultaneous admin access is prohibited.',
+      });
+    }
+
     const parts = token.split('_');
     const userId = parts[2];
 
@@ -239,7 +357,7 @@ router.get('/me', (req, res) => {
     const user = db.prepare('SELECT id, email, full_name, role, department, avatar_initials FROM users WHERE id = ?').get(userId) as any;
 
     if (!user) {
-      return res.status(401).json({ success: false, error: 'User session expired or revoked' });
+      return res.status(401).json({ success: false, error: 'User record not found' });
     }
 
     res.json({ success: true, user });

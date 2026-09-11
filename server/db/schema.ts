@@ -22,6 +22,17 @@ export function initSchema() {
       created_at TEXT DEFAULT (datetime('now'))
     );
 
+    CREATE TABLE IF NOT EXISTS active_sessions (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL REFERENCES users(id),
+      email TEXT NOT NULL,
+      full_name TEXT NOT NULL,
+      token TEXT NOT NULL UNIQUE,
+      ip_address TEXT,
+      created_at TEXT DEFAULT (datetime('now')),
+      last_heartbeat TEXT DEFAULT (datetime('now'))
+    );
+
     CREATE TABLE IF NOT EXISTS programmes (
       id TEXT PRIMARY KEY,
       name TEXT NOT NULL,

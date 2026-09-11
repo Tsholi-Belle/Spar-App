@@ -53,6 +53,8 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [successNotice, setSuccessNotice] = useState<string | null>(null);
 
+  const [sessionNotice, setSessionNotice] = useState<string | null>(null);
+
   // Step 1: Validate Email + Password & Dispatch 2FA Code
   const handleCredentialsSubmit = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
@@ -80,6 +82,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
       setLoading(true);
       setErrorMsg(null);
       setSuccessNotice(null);
+      setSessionNotice(null);
 
       // Call Backend login API
       try {
@@ -87,6 +90,9 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
         if (res.step === 'verification_required') {
           setVerificationId(res.verification_id);
           setSimulatedCode(res.simulated_code);
+          if (res.active_session_notice) {
+            setSessionNotice(res.active_session_notice);
+          }
           setStep('verification');
           setSuccessNotice(
             `A 6-digit approval code was dispatched to ${email.trim()}.`
@@ -251,6 +257,14 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
           <div className="mt-4 p-3 bg-zinc-900 text-white rounded-xl text-xs font-semibold flex items-center gap-2 animate-in fade-in">
             <CheckCircle2 className="w-4 h-4 shrink-0 text-zinc-200" />
             <span>{successNotice}</span>
+          </div>
+        )}
+
+        {/* Concurrency Overwrite Notice */}
+        {sessionNotice && (
+          <div className="mt-4 p-3 bg-zinc-100 border border-zinc-400 rounded-xl text-zinc-900 text-xs font-semibold flex items-start gap-2 animate-in fade-in">
+            <ShieldAlert className="w-4 h-4 shrink-0 text-black mt-0.5" />
+            <span className="leading-snug">{sessionNotice}</span>
           </div>
         )}
 

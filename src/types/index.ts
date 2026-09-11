@@ -54,6 +54,7 @@ export interface AuthLoginResponse {
   full_name: string;
   simulated_code: string;
   message: string;
+  active_session_notice?: string;
 }
 
 export interface AuthAccount {
