@@ -3,11 +3,12 @@
 A comprehensive, modern full-stack web application for retail grocery store chains running youth skills development programmes (SETA & Youth Employment Service / YES accredited).
 
 Tailored specifically for retail grocery environments with departments such as:
-- **Artisan Bakery & Pastry Arts**
-- **Culinary Arts & Hot Deli Operations**
-- **Front-End Cashiers & POS Customer Service**
-- **Retail Meat Processing & Butchery Apprenticeship**
-- **Fresh Produce & Floor Merchandising**
+- **FLOOR**
+- **HMR**
+- **Butchery**
+- **Deli**
+- **Front End**
+- **Bakery**
 
 ---
 
@@ -20,7 +21,6 @@ Tailored specifically for retail grocery environments with departments such as:
 
 ### 2.  Learner Directory & Dropout Tracking
 - Complete learner profiles including National ID, Learner Code, PIN for clock-in kiosk, and emergency contacts.
-- **Banking Disbursement Info**: Bank Name, Account Number, Branch Code, Account Type for direct EFT payouts.
 - **Dropout & Early Exit Workflow**: Record exit dates, reasons (e.g., *Found permanent retail employment*, *Relocation*, *Health reasons*, *Dismissal*), notes, and automatic pro-rating for payment settlements.
 - Detailed Learner Profile modal with 30-day attendance history and timesheet ledger.
 
