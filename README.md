@@ -11,20 +11,20 @@ Tailored specifically for retail grocery environments with departments such as:
 
 ---
 
-## 🌟 Key Features
+##  Key Features
 
-### 1. 📋 Programme & Intake Management
+### 1.  Programme & Intake Management
 - Create, edit, and manage skills programmes with duration dates, target headcount capacity, and store supervisor assignments.
 - Configurable monthly stipend allowances and daily rates (e.g. R3,800/month or R190/day).
 - Real-time headcount capacity tracking (Enrolled vs Target).
 
-### 2. 👥 Learner Directory & Dropout Tracking
+### 2.  Learner Directory & Dropout Tracking
 - Complete learner profiles including National ID, Learner Code, PIN for clock-in kiosk, and emergency contacts.
 - **Banking Disbursement Info**: Bank Name, Account Number, Branch Code, Account Type for direct EFT payouts.
 - **Dropout & Early Exit Workflow**: Record exit dates, reasons (e.g., *Found permanent retail employment*, *Relocation*, *Health reasons*, *Dismissal*), notes, and automatic pro-rating for payment settlements.
 - Detailed Learner Profile modal with 30-day attendance history and timesheet ledger.
 
-### 3. ⏱️ Dual Attendance & Clock-In Modes
+### 3.  Dual Attendance & Clock-In Modes
 - **Learner Kiosk Terminal**:
   - Touchscreen / tablet-optimized clock-in terminal with digital clock and 4-digit PIN pad.
   - One-touch **Clock In**, **Start/End Lunch**, and **Clock Out** with live shift hours calculation.
@@ -37,7 +37,7 @@ Tailored specifically for retail grocery environments with departments such as:
 - **Monthly Attendance Matrix**:
   - Calendar grid view (Learners $\times$ Days of the Month) with color indicators and monthly attendance percentage.
 
-### 4. 💰 Automated Stipend Payment Reconciliation Engine
+### 4.  Automated Stipend Payment Reconciliation Engine
 - Rule-based reconciliation engine:
   - **Gross Stipend**: Full monthly allowance or scheduled days $\times$ daily rate.
   - **Pro-Rata Settlement**: Automatically calculated for learners who exited or dropped out early.
@@ -47,7 +47,7 @@ Tailored specifically for retail grocery environments with departments such as:
 - **Bank Batch Export**: Standard direct credit CSV file for bank upload.
 - **Printable Learner Stipend Advice (Payslip)**: High-fidelity, printable/PDF slip with company branding, learner details, attendance breakdown, and itemized earnings/deductions.
 
-### 5. 📊 Executive Dashboard & Analytics
+### 5.  Executive Dashboard & Analytics
 - Live KPI cards: Active Learners, Target Capacity %, August Attendance Rate %, Early Exit / Dropout Rate %, and Monthly Stipend Liability.
 - Department Attendance Performance bar chart comparing Bakery vs Culinary vs Cashier vs Butchery vs Merchandising.
 - Attendance Distribution pie chart.
@@ -56,7 +56,7 @@ Tailored specifically for retail grocery environments with departments such as:
 
 ---
 
-## 🚀 Getting Started
+##  Getting Started
 
 ### Prerequisites
 - Node.js (v18+)
@@ -84,7 +84,7 @@ Open your browser to:
 
 ---
 
-## 🛠️ Tech Stack
+##  Tech Stack
 - **Frontend**: React 19, TypeScript, Vite, Tailwind CSS v4, Lucide React, Recharts, Canvas-Confetti
 - **Backend API**: Node.js, Express, TypeScript (via `tsx`)
 - **Database**: SQLite (via `better-sqlite3` with WAL mode and foreign keys)
