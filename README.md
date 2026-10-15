@@ -20,7 +20,7 @@ Tailored specifically for retail grocery environments with departments such as:
 - Real-time headcount capacity tracking (Enrolled vs Target).
 
 ### 2.  Learner Directory & Dropout Tracking
-- Complete learner profiles including National ID, Learner Code, PIN for clock-in kiosk, and emergency contacts.
+- Complete learner profiles including Learner Code and emergency contacts.
 - **Dropout & Early Exit Workflow**: Record exit dates, reasons (e.g., *Found permanent retail employment*, *Relocation*, *Health reasons*, *Dismissal*), notes, and automatic pro-rating for payment settlements.
 - Detailed Learner Profile modal with 30-day attendance history and timesheet ledger.
 
@@ -28,14 +28,13 @@ Tailored specifically for retail grocery environments with departments such as:
 - **Learner Kiosk Terminal**:
   - Touchscreen / tablet-optimized clock-in terminal with digital clock and 4-digit PIN pad.
   - One-touch **Clock In**, **Start/End Lunch**, and **Clock Out** with live shift hours calculation.
-  - Celebratory confetti on punch + motivational retail quote.
   - Demo quick-select bar for rapid testing.
 - **Supervisor Daily Roll-Call**:
   - Daily roster with 1-click status pills: `Present (Full Day)`, `Late`, `Half Day`, `Sick / Excused`, `Unexcused Absent`, `Left Programme`.
-  - Bulk actions: "Mark All Active as Present (07:30 - 16:00)".
+  - Bulk actions: "Mark All Active as Present (07:30 - 19:00)".
   - Notes modal to attach supervisor observations and clinic / medical certificates.
 - **Monthly Attendance Matrix**:
-  - Calendar grid view (Learners $\times$ Days of the Month) with color indicators and monthly attendance percentage.
+  - Calendar grid view (Learners $\times$ Days of the Month) with colour indicators and monthly attendance percentage.
 
 ### 4.  Automated Stipend Payment Reconciliation Engine
 - Rule-based reconciliation engine:
